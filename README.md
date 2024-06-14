@@ -11,9 +11,9 @@ This is an OpenStreetMap HTTP API Server that provides endpoints to query OpenSt
 - [x] Import OpenStreetMap PBF files
 
 ## Applications
-1. [osm-api-server](api/main.go): OpenStreetMap HTTP API Server
-2. [osm-pbf-downloader](scripts/osm-pbf-downloader/main.go): OpenStreetMap PBF Downloader
-3. [osm-pbf-importer](scripts/osm-pbf-importer/main.go): OpenStreetMap PBF Importer
+1. [osm-api-server](cmd/api/main.go): OpenStreetMap HTTP API Server
+2. [osm-pbf-downloader](cmd/scripts/osm-pbf-downloader/main.go): OpenStreetMap PBF Downloader
+3. [osm-pbf-importer](cmd/scripts/osm-pbf-importer/main.go): OpenStreetMap PBF Importer
 
 (1) **osm-api-server** is the main application for this project. It is an HTTP API server that provides endpoints to query OpenStreetMap data.
 
