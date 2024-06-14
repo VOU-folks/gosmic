@@ -1,5 +1,5 @@
 [Unit]
-Description=NaviMax OSM API
+Description=OSM API Server
 After=network.target
 
 [Install]
@@ -7,7 +7,7 @@ WantedBy=multi-user.target
 
 [Service]
 EnvironmentFile=
-ExecStart=/usr/local/bin/osm-api -config /etc/osm-api/config.yaml
+ExecStart=/usr/local/osm-api/bin/osm-api-server -config /etc/osm-api/config.yaml
 ExecStop=/bin/kill -s TERM $MAINPID
 WorkingDirectory=/etc/osm-api
 User=root
