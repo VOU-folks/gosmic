@@ -1,2 +1,2 @@
-### NaviMax OSM API
+### OSM API root route
 GET {{host}}/
