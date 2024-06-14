@@ -1,0 +1,30 @@
+[Unit]
+Description=NaviMax OSM API
+After=network.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+EnvironmentFile=
+ExecStart=/usr/local/bin/osm-api -config /etc/osm-api/config.yaml
+ExecStop=/bin/kill -s TERM $MAINPID
+WorkingDirectory=/etc/osm-api
+User=root
+Group=root
+Restart=always
+RestartSec=5
+StandardOutput=append:/var/log/osm-api/api.log
+StandardError=append:/var/log/osm-api/api.log
+SyslogIdentifier=%n
+
+TimeoutStopSec=0
+Restart=always
+User=root
+Group=root
+RuntimeDirectory=/etc/osm-api
+RuntimeDirectoryMode=2755
+
+UMask=007
+PrivateTmp=yes
+LimitNOFILE=65535

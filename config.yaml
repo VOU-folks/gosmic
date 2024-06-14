@@ -1,0 +1,26 @@
+apps:
+  api:
+    name: "osm-api/api"
+    version: "1.0.0"
+    listener:
+      host: "0.0.0.0"
+      port: 5080
+    ssl:
+      enabled: false
+      cert: ""
+      key: ""
+      manager:
+        email: "anar.k.jafarov@gmail.com"
+        host_whitelist: ["osm.nav.az"]
+        cache_dir: ".cache/tls"
+
+storage:
+  root: "/storage/osm-api"
+  pbfs: "/Users/num8er/Projects/osm-api/storage/pbfs"
+  #pbfs: "/storage/osm-api/pbfs"
+
+osm:
+  sources:
+    pbf:
+      url: "https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf"
+      file: "planet-latest.osm.pbf"

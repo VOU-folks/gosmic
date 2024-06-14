@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="2ae89d22-008a-42fe-aa8b-e4425ece2a04" name="osm-api">
+        <fileTransfer rootFolder="/users/apps/osm-api" accessType="SFTP" host="osm-api" port="22" sshConfigId="fed353a8-c7b2-441e-a434-1f470645cfeb" sshConfig="apps@osm-api:22 agent" authAgent="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
