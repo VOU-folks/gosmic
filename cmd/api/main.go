@@ -5,10 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"osm-api/internal/apps/api"
+	. "osm-api/internal/config"
 	"osm-api/internal/di"
 	"osm-api/internal/handlers"
-	"osm-api/internal/services"
-	"osm-api/internal/structs"
 )
 
 var (
@@ -21,11 +20,11 @@ func main() {
 	configFile := flag.String("config", "config.yaml", "path to the config file. Example: api -config /full/path/to/config.yaml")
 	flag.Parse()
 
-	config, err := getConfig(*configFile)
+	config, err := GetConfigService(*configFile)
 	if err != nil {
 		panic(err)
 	}
-	apiConfig := config.Apps.Api
+	apiConfig := config.GetApiConfig()
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, "AppName", apiConfig.Name)
@@ -42,23 +41,6 @@ func main() {
 	registerDependencies(diContainer)
 
 	handlers.StartLifecycle(app)
-}
-
-func getConfig(configFilePath string) (structs.Config, error) {
-	var err error
-	var configService *services.ConfigService
-
-	defaultConfigFilePath := "config.yaml"
-	if configFilePath == "" {
-		configFilePath = defaultConfigFilePath
-	}
-	configService = services.NewConfigService(configFilePath)
-	err = configService.Init()
-	if err != nil {
-		return structs.Config{}, err
-	}
-
-	return configService.GetConfig(), nil
 }
 
 func registerDependencies(di di.Container) {
