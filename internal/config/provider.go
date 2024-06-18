@@ -1,6 +1,6 @@
 package config
 
-import "osm-api/internal/services"
+import "gosmic/internal/services"
 
 func GetConfigService(configFilePath string) (*services.ConfigService, error) {
 	var err error

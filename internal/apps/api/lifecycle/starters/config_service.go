@@ -1,7 +1,7 @@
 package starters
 
 import (
-	"osm-api/internal/services"
+	"gosmic/internal/services"
 )
 
 func CreateConfigService() *services.ConfigService {

@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
-	. "osm-api/internal/config"
+	. "gosmic/internal/config"
 )
 
 func main() {

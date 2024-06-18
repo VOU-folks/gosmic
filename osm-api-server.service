@@ -1,5 +1,5 @@
 [Unit]
-Description=OSM API Server
+Description=Gosmic API Server
 After=network.target
 
 [Install]
@@ -7,22 +7,22 @@ WantedBy=multi-user.target
 
 [Service]
 EnvironmentFile=
-ExecStart=/usr/local/osm-api/bin/osm-api-server -config /etc/osm-api/config.yaml
+ExecStart=/usr/local/gosmic/bin/gosmic-server -config /etc/gosmic/config.yaml
 ExecStop=/bin/kill -s TERM $MAINPID
-WorkingDirectory=/etc/osm-api
+WorkingDirectory=/etc/gosmic
 User=root
 Group=root
 Restart=always
 RestartSec=5
-StandardOutput=append:/var/log/osm-api/api.log
-StandardError=append:/var/log/osm-api/api.log
+StandardOutput=append:/var/log/gosmic/api.log
+StandardError=append:/var/log/gosmic/api.log
 SyslogIdentifier=%n
 
 TimeoutStopSec=0
 Restart=always
 User=root
 Group=root
-RuntimeDirectory=/etc/osm-api
+RuntimeDirectory=/etc/gosmic
 RuntimeDirectoryMode=2755
 
 UMask=007

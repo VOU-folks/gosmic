@@ -1,7 +1,7 @@
 package stoppers
 
 import (
-	"osm-api/internal/di"
+	"gosmic/internal/di"
 )
 
 func StopServices(di di.Container) {

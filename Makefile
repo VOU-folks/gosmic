@@ -1,36 +1,47 @@
 build-api:
-	go build -o bin/osm-api-server cmd/api/main.go
-	chmod +x bin/osm-api-server
+	go build -o bin/gosmic-api-server cmd/api/main.go
+	chmod +x bin/gosmic-api-server
 
 build-scripts:
-	go build -o bin/osm-pbf-downloader cmd/scripts/osm-pbf-downloader/main.go
-	go build -o bin/osm-pbf-importer cmd/scripts/osm-pbf-importer/main.go
-	chmod +x bin/osm-pbf-downloader
-	chmod +x bin/osm-pbf-importer
+	go build -o bin/gosmic-pbf-downloader cmd/scripts/gosmic-pbf-downloader/main.go
+	go build -o bin/gosmic-pbf-importer cmd/scripts/gosmic-pbf-importer/main.go
+	chmod +x bin/gosmic-pbf-downloader
+	chmod +x bin/gosmic-pbf-importer
 
 build: build-api build-scripts
 
 run: build
-	./bin/osm-api-server
+	./bin/gosmic-server
 
 test:
 	go test -v ./...
+
+create-linux-user:
+	useradd -d /etc/gosmic -s /usr/sbin/nologin gosmic
 
 install: build-api build-scripts
 	go mod download
 	go mod tidy
 
-	mkdir -p /usr/local/osm-api/bin
-	cp bin/osm-api-server /usr/local/osm-api/bin/osm-api-server
-	cp bin/osm-pbf-downloader /usr/local/osm-api/bin/osm-pbf-downloader
-	cp bin/osm-pbf-importer /usr/local/osm-api/bin/osm-pbf-importer
+	mkdir -p /usr/local/gosmic/bin
+	cp bin/gosmic-api-server /usr/local/gosmic/bin/gosmic-api-server
+	cp bin/gosmic-pbf-downloader /usr/local/gosmic/bin/gosmic-pbf-downloader
+	cp bin/gosmic-pbf-importer /usr/local/gosmic/bin/gosmic-pbf-importer
 
-	mkdir -p /etc/osm-api
-	cp config.yaml /etc/osm-api/config.yaml
+	mkdir -p /etc/gosmic
+	cp config.yaml /etc/gosmic/config.yaml
 
-	mkdir -p /var/log/osm-api
+	mkdir -p /var/log/gosmic
 
-	cp osm-api-server.service /usr/lib/systemd/system/
+	cp gosmic-api-server.service /usr/lib/systemd/system/
 	systemctl daemon-reload
-	systemctl enable osm-api-server.service
-	systemctl restart osm-api-server.service
+	systemctl enable gosmic-api-server.service
+	systemctl restart gosmic-api-server.service
+
+configure-nginx:
+	cp certs/gosmic.io.crt /etc/gosmic/
+	cp certs/gosmic.io.key /etc/gosmic/
+	cp nginx-vhost.conf /etc/gosmic/nginx-vhost.conf
+	rm -f /etc/nginx/sites-enabled/gosmic
+	ln -s /etc/gosmic/nginx-vhost.conf /etc/nginx/sites-enabled/gosmic
+	chown -R gosmic:gosmic /etc/gosmic

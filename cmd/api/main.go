@@ -4,10 +4,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"osm-api/internal/apps/api"
-	. "osm-api/internal/config"
-	"osm-api/internal/di"
-	"osm-api/internal/handlers"
+	"gosmic/internal/apps/api"
+	. "gosmic/internal/config"
+	"gosmic/internal/di"
+	"gosmic/internal/handlers"
 )
 
 var (

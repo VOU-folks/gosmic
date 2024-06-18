@@ -31,7 +31,7 @@ func NoTlsVerificationOption() ClientOptions {
 	}
 }
 
-const defaultUserAgent = "NaviMax/OSM-API/1.0"
+const defaultUserAgent = "NaviMax/gosmic/1.0"
 
 func NewClient() *Client {
 	defaultOptions := ClientOptions{

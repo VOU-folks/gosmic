@@ -9,7 +9,7 @@ Thanks for being interested! Here's guidelines to contributing to package.
 ## Getting Your Hands Dirty
 - Fork the repository.
 - Create new branch from **main**.
-- Put your pull requests to [main](https://github.com/VOU-folks/osm-api/tree/main) branch.
+- Put your pull requests to [main](https://github.com/VOU-folks/gosmic/tree/main) branch.
 
 ## Submit!
 - Push your changes.

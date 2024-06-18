@@ -1,5 +1,5 @@
-# OpenStreetMap API Server 
-![GoLang CI/CD](https://github.com/VOU-folks/osm-api/actions/workflows/golang-ci-cd.yml/badge.svg)
+# Gosmic
+![GoLang CI/CD](https://github.com/VOU-folks/gosmic/actions/workflows/golang-ci-cd.yml/badge.svg)
 
 ## Overview
 This is an OpenStreetMap HTTP API Server that provides endpoints to query OpenStreetMap data.
@@ -11,12 +11,12 @@ This is an OpenStreetMap HTTP API Server that provides endpoints to query OpenSt
 - [x] Import OpenStreetMap PBF files
 
 ## Applications
-1. [osm-api-server](cmd/api/main.go): OpenStreetMap HTTP API Server
-2. [osm-pbf-downloader](cmd/scripts/osm-pbf-downloader/main.go): OpenStreetMap PBF Downloader
-3. [osm-pbf-importer](cmd/scripts/osm-pbf-importer/main.go): OpenStreetMap PBF Importer
+1. [gosmic-server](cmd/api/main.go): OpenStreetMap HTTP API Server
+2. [gosmic-pbf-downloader](cmd/scripts/gosmic-pbf-downloader/main.go): OpenStreetMap PBF Downloader
+3. [gosmic-pbf-importer](cmd/scripts/gosmic-pbf-importer/main.go): OpenStreetMap PBF Importer
 
-(1) **osm-api-server** is the main application for this project. It is an HTTP API server that provides endpoints to query OpenStreetMap data.
+(1) **gosmic-server** is the main application for this project. It is an HTTP API server that provides endpoints to query OpenStreetMap data.
 
-(2) **osm-pbf-downloader** is a utility application to download OpenStreetMap PBF files to storage folder.
+(2) **gosmic-pbf-downloader** is a utility application to download OpenStreetMap PBF files to storage folder.
 
-(3) **osm-pbf-importer** is a utility application to import OpenStreetMap PBF files into supported by `osm-api-server` database.
+(3) **gosmic-pbf-importer** is a utility application to import OpenStreetMap PBF files into supported by `gosmic-server` database.

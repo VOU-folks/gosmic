@@ -6,8 +6,8 @@ import (
 	"github.com/labstack/echo-contrib/echoprometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"gosmic/internal/di"
 	"io"
-	"osm-api/internal/di"
 )
 
 func RegisterMiddlewares(ctx context.Context, di di.Container, engine *echo.Echo) {

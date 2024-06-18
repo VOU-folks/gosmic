@@ -1,6 +1,6 @@
 apps:
   api:
-    name: "osm-api/api"
+    name: "gosmic/api"
     version: "1.0.0"
     listener:
       host: "0.0.0.0"
@@ -11,13 +11,13 @@ apps:
       key: ""
       manager:
         email: "anar.k.jafarov@gmail.com"
-        host_whitelist: ["osm.nav.az"]
+        host_whitelist: ["gosmic.io"]
         cache_dir: ".cache/tls"
 
 storage:
-  root: "/storage/osm-api"
-  pbfs: "/Users/num8er/Projects/osm-api/storage/pbfs"
-  #pbfs: "/storage/osm-api/pbfs"
+  root: "/storage/gosmic"
+  #pbfs: "/Users/num8er/Projects/gosmic/storage/pbfs"
+  pbfs: "/storage/gosmic/pbfs"
 
 osm:
   sources:

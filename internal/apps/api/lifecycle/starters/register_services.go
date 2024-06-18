@@ -3,7 +3,7 @@ package starters
 import (
 	"context"
 
-	"osm-api/internal/di"
+	"gosmic/internal/di"
 )
 
 func RegisterServices(ctx context.Context, di di.Container) {

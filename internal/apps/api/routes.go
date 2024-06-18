@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/labstack/echo-contrib/echoprometheus"
 	"github.com/labstack/echo/v4"
+	"gosmic/internal/di"
 	"net/http"
-	"osm-api/internal/di"
 )
 
 func RegisterRoutes(ctx context.Context, di di.Container, engine *echo.Echo) {

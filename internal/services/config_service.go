@@ -2,8 +2,8 @@ package services
 
 import (
 	"gopkg.in/yaml.v3"
+	"gosmic/internal/structs"
 	"os"
-	"osm-api/internal/structs"
 	"sync"
 )
 

@@ -4,14 +4,14 @@ import (
 	"context"
 	"errors"
 	"github.com/labstack/echo/v4"
+	"gosmic/internal/apps/api/lifecycle/starters"
+	"gosmic/internal/apps/api/lifecycle/stoppers"
 	"net"
 	"net/http"
-	"osm-api/internal/apps/api/lifecycle/starters"
-	"osm-api/internal/apps/api/lifecycle/stoppers"
 
 	"golang.org/x/crypto/acme/autocert"
 
-	"osm-api/internal/di"
+	"gosmic/internal/di"
 )
 
 type App struct {
