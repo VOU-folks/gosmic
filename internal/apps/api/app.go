@@ -3,14 +3,14 @@ package api
 import (
 	"context"
 	"errors"
-	"github.com/labstack/echo/v4"
-	"gosmic/internal/apps/api/lifecycle/starters"
-	"gosmic/internal/apps/api/lifecycle/stoppers"
 	"net"
 	"net/http"
 
+	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/acme/autocert"
 
+	"gosmic/internal/apps/api/lifecycle/starters"
+	"gosmic/internal/apps/api/lifecycle/stoppers"
 	"gosmic/internal/di"
 )
 
