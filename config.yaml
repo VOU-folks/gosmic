@@ -14,9 +14,14 @@ apps:
         host_whitelist: ["gosmic.io"]
         cache_dir: ".cache/tls"
 
+database: # uses mongodb
+  connection_string: "mongodb://localhost:27017"
+  database_name: "gosmic"
+  #connection_string: "mongodb://[username:password@]host1[:port1][,...hostN[:portN]][/[defaultauthdb][?options]]"
+  #database_name: "gosmic"
+
 storage:
   root: "/storage/gosmic"
-  #pbfs: "/Users/num8er/Projects/gosmic/storage/pbfs"
   pbfs: "/storage/gosmic/pbfs"
 
 osm:

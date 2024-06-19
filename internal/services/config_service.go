@@ -60,7 +60,11 @@ func (s *ConfigService) GetApiConfig() structs.ApiConfig {
 	return s.config.Apps.Api
 }
 
-func (s *ConfigService) GetStorage() structs.StorageConfig {
+func (s *ConfigService) GetDatabaseConfig() structs.DatabaseConfig {
+	return s.config.Database
+}
+
+func (s *ConfigService) GetStorageConfig() structs.StorageConfig {
 	return s.config.Storage
 }
 

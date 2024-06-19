@@ -1,9 +1,10 @@
 package structs
 
 type Config struct {
-	Apps    AppsConfig    `yaml:"apps"`
-	Storage StorageConfig `yaml:"storage"`
-	OSM     OSMConfig     `yaml:"osm"`
+	Apps     AppsConfig     `yaml:"apps"`
+	Database DatabaseConfig `yaml:"database"`
+	Storage  StorageConfig  `yaml:"storage"`
+	OSM      OSMConfig      `yaml:"osm"`
 }
 
 type AppsConfig struct {
@@ -27,6 +28,11 @@ type ApiConfig struct {
 			CacheDir      string   `yaml:"cache_dir"`
 		} `yaml:"manager"`
 	} `yaml:"ssl"`
+}
+
+type DatabaseConfig struct {
+	ConnectionString string `yaml:"connection_string"`
+	DatabaseName     string `yaml:"database_name"`
 }
 
 type StorageConfig struct {
