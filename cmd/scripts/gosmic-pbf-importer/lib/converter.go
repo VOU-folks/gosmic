@@ -3,7 +3,7 @@ package lib
 import (
 	"github.com/paulmach/osm"
 
-	. "gosmic/db/mongodb/models"
+	. "gosmic/db/models"
 )
 
 func ConvertWay(osmWay *osm.Way) Object {

@@ -10,3 +10,6 @@ type Database = mongo.Database
 type Collection = mongo.Collection
 
 type ClientOptions = options.ClientOptions
+
+type InsertOneResult = mongo.InsertOneResult
+type InsertManyResult = mongo.InsertManyResult

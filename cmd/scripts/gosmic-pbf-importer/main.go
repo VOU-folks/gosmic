@@ -4,13 +4,18 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/paulmach/osm"
-	"github.com/paulmach/osm/osmpbf"
 	"os"
 	"path/filepath"
 
-	"gosmic/db/mongodb"
-	. "gosmic/db/mongodb/models"
+	"github.com/paulmach/osm"
+	"github.com/paulmach/osm/osmpbf"
+
+	mongodb "gosmic/db/drivers/mongodb"
+
+	"gosmic/db"
+	"gosmic/db/indexes"
+	"gosmic/db/models"
+
 	. "gosmic/internal/config"
 	"gosmic/internal/structs"
 
@@ -22,6 +27,10 @@ var config struct {
 	Storage  structs.StorageConfig
 	Osm      structs.OSMConfig
 }
+
+var dbClient *mongodb.Client
+var dbInstance *mongodb.Database
+var dbCollections *db.Collections
 
 func init() {
 	var err error
@@ -47,7 +56,7 @@ func main() {
 	// --------------------------------------------
 	// Step 1: Connection to Database
 	// --------------------------------------------
-	dbClient, err := mongodb.Connect(ctx, config.Database.ConnectionString)
+	dbClient, err = mongodb.Connect(ctx, config.Database.ConnectionString)
 	if err != nil {
 		panic(err)
 	}
@@ -64,13 +73,31 @@ func main() {
 		}
 	}(ctx, dbClient)
 
-	db := mongodb.SwitchToDB(ctx, dbClient, config.Database.DatabaseName)
+	dbInstance = mongodb.SwitchToDB(ctx, dbClient, config.Database.DatabaseName)
 
 	fmt.Println("Successfully connected to Database: ", config.Database.DatabaseName)
 	// --------------------------------------------
 
 	// --------------------------------------------
-	// Step 2: Initiating PBF file scanner
+	// Step 2: Ensuring db indexes
+	// --------------------------------------------
+	err = indexes.CreateIndexes(ctx, dbInstance)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Successfully created (ensured) db indexes")
+	// --------------------------------------------
+
+	// --------------------------------------------
+	// Step 3: Initiating collections
+	// --------------------------------------------
+	dbCollections = &db.Collections{
+		Objects: mongodb.GetCollection(ctx, dbInstance, "objects"),
+	}
+	// --------------------------------------------
+
+	// --------------------------------------------
+	// Step 4: Initiating PBF file scanner
 	// --------------------------------------------
 	pbfFileName := config.Osm.Sources.PBF.FileName
 	pbfStorage := config.Storage.PBFs
@@ -99,14 +126,14 @@ func main() {
 	// --------------------------------------------
 	// Step 3: Launching the import process
 	// --------------------------------------------
-	run(ctx, scanner, db)
+	run(ctx, scanner, dbInstance, dbCollections)
 }
 
-func run(ctx context.Context, scanner *osmpbf.Scanner, db *mongodb.Database) {
+func run(ctx context.Context, scanner *osmpbf.Scanner, dbInstance *mongodb.Database, dbCollections *db.Collections) {
 	for scanner.Scan() {
 		object := scanner.Object()
-		processErr := processObject(ctx, object)
 
+		processErr := processObject(ctx, object, dbInstance, dbCollections)
 		if processErr != nil {
 			panic(processErr)
 		}
@@ -118,12 +145,12 @@ func run(ctx context.Context, scanner *osmpbf.Scanner, db *mongodb.Database) {
 	}
 }
 
-func processObject(ctx context.Context, osmObject osm.Object) error {
+func processObject(ctx context.Context, osmObject osm.Object, dbInstance *mongodb.Database, dbCollections *db.Collections) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
 
-	var dbObject Object
+	var dbObject models.Object
 
 	switch osmObject := osmObject.(type) {
 	case *osm.Way:
@@ -143,5 +170,27 @@ func processObject(ctx context.Context, osmObject osm.Object) error {
 	fmt.Println("Location:", dbObject.Location.Type, dbObject.Location.Coordinates)
 	fmt.Println("Members:", dbObject.Members)
 
+	_, err := saveObject(ctx, dbObject, dbCollections.Objects)
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func saveObject(ctx context.Context, object models.Object, objectsCollection *mongodb.Collection) (*models.Object, error) {
+	fmt.Println("// ---- OBJECT ---- //")
+	fmt.Printf("%+v\n", object)
+	fmt.Println("// ---- ------ ---- //")
+
+	_, err := mongodb.InsertOne(ctx, object, objectsCollection)
+	if err != nil {
+		panic(err)
+	}
+
+	//fmt.Println("saved")
+	//fmt.Printf("%+v\n", result)
+	//fmt.Println("// ---- ------ ---- //")
+
+	return nil, nil
 }
