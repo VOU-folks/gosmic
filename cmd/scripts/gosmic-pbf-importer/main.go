@@ -225,7 +225,7 @@ func processObject(ctx context.Context, osmObject osm.Object, dbInstance *mongod
 		fmt.Println("Processed objects count: ", processedObjectsCount.Load())
 		fmt.Printf("Last object: %v\n", dbObject)
 		fmt.Println("Time elapsed: ", time.Since(timeCheckpoint))
-		fmt.Println("----/Checkpoint/----\n")
+		fmt.Println("----/Checkpoint/----")
 
 		timeCheckpoint = time.Now()
 	}
