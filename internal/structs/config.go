@@ -42,6 +42,10 @@ type StorageConfig struct {
 
 type OSMConfig struct {
 	Sources struct {
+		PBFAzerbaijan struct {
+			Url      string `yaml:"url"`
+			FileName string `yaml:"file"`
+		} `yaml:"pbf_azerbaijan"`
 		PBF struct {
 			Url      string `yaml:"url"`
 			FileName string `yaml:"file"`

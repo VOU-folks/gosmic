@@ -1,0 +1,12 @@
+db.objects.find({
+  location: {
+    $near: {
+      $geometry: {
+        type: "Point",
+        coordinates: [49.80408, 40.41400]
+      },
+      $maxDistance: 1000
+    }
+  }
+}).pretty();
+

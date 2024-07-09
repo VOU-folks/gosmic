@@ -6,6 +6,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/paulmach/osm"
 	"github.com/paulmach/osm/osmpbf"
@@ -32,6 +36,18 @@ var dbClient *mongodb.Client
 var dbInstance *mongodb.Database
 var dbCollections *db.Collections
 
+var objectsChannel chan osm.Object
+
+var batchChannel chan []interface{}
+var batchSize uint = 10000
+var mxBatch sync.Mutex
+var batch []interface{}
+
+var processedObjectsCount atomic.Uint64
+
+var timeCheckpoint time.Time
+var startedAt time.Time
+
 func init() {
 	var err error
 
@@ -46,6 +62,14 @@ func init() {
 	config.Osm = configService.GetOsmConfig()
 	config.Storage = configService.GetStorageConfig()
 	config.Database = configService.GetDatabaseConfig()
+
+	objectsChannel = make(chan osm.Object, runtime.NumCPU()*10)
+	batchChannel = make(chan []interface{})
+	batch = make([]interface{}, batchSize)
+	mxBatch = sync.Mutex{}
+
+	timeCheckpoint = time.Now()
+	startedAt = time.Now()
 }
 
 func main() {
@@ -124,24 +148,46 @@ func main() {
 	// --------------------------------------------
 
 	// --------------------------------------------
-	// Step 3: Launching the import process
+	// Step 5: Starting object processor
+	// --------------------------------------------
+	go objectProcessor(ctx, objectsChannel, dbInstance, dbCollections)
+	go batchProcessor(ctx, batchChannel, dbInstance, dbCollections)
+
+	// --------------------------------------------
+	// Step 6: Launching the import process
 	// --------------------------------------------
 	run(ctx, scanner, dbInstance, dbCollections)
 }
 
 func run(ctx context.Context, scanner *osmpbf.Scanner, dbInstance *mongodb.Database, dbCollections *db.Collections) {
 	for scanner.Scan() {
-		object := scanner.Object()
-
-		processErr := processObject(ctx, object, dbInstance, dbCollections)
-		if processErr != nil {
-			panic(processErr)
-		}
+		objectsChannel <- scanner.Object()
 	}
+
+	if len(batch) > 0 {
+		batchChannel <- batch
+	}
+
+	fmt.Println("Total processed objects count: ", processedObjectsCount.Load())
+	fmt.Println("Total time elapsed: ", time.Since(startedAt))
 
 	scanErr := scanner.Err()
 	if scanErr != nil {
 		panic(scanErr)
+	}
+}
+
+func objectProcessor(ctx context.Context, objectsChannel chan osm.Object, dbInstance *mongodb.Database, dbCollections *db.Collections) {
+	for {
+		select {
+		case object := <-objectsChannel:
+			err := processObject(ctx, object, dbInstance, dbCollections)
+			if err != nil {
+				fmt.Errorf("Error processing object: %v", err)
+			}
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 
@@ -163,34 +209,40 @@ func processObject(ctx context.Context, osmObject osm.Object, dbInstance *mongod
 		return fmt.Errorf("unknown object type: %T", osmObject)
 	}
 
-	fmt.Println("ID:", dbObject.ID.ID, "Type:", dbObject.ID.Type, "Version:", dbObject.ID.Version)
-	fmt.Println("Tags:", dbObject.Tags)
-	fmt.Println("Timestamp:", dbObject.Timestamp)
-	fmt.Println("Nodes:", dbObject.Nodes)
-	fmt.Println("Location:", dbObject.Location.Type, dbObject.Location.Coordinates)
-	fmt.Println("Members:", dbObject.Members)
+	mxBatch.Lock()
+	counter := processedObjectsCount.Load()
+	increment := counter % uint64(batchSize)
+	batch[increment] = dbObject
+	if increment == uint64(batchSize)-1 {
+		batchChannel <- batch
+		batch = make([]interface{}, batchSize)
+	}
+	mxBatch.Unlock()
 
-	_, err := saveObject(ctx, dbObject, dbCollections.Objects)
-	if err != nil {
-		return err
+	processedObjectsCount.Add(1)
+	if processedObjectsCount.Load()%1000000 == 0 {
+		fmt.Println("\n----\\Checkpoint\\----")
+		fmt.Println("Processed objects count: ", processedObjectsCount.Load())
+		fmt.Printf("Last object: %v\n", dbObject)
+		fmt.Println("Time elapsed: ", time.Since(timeCheckpoint))
+		fmt.Println("----/Checkpoint/----\n")
+
+		timeCheckpoint = time.Now()
 	}
 
 	return nil
 }
 
-func saveObject(ctx context.Context, object models.Object, objectsCollection *mongodb.Collection) (*models.Object, error) {
-	fmt.Println("// ---- OBJECT ---- //")
-	fmt.Printf("%+v\n", object)
-	fmt.Println("// ---- ------ ---- //")
-
-	_, err := mongodb.InsertOne(ctx, object, objectsCollection)
-	if err != nil {
-		panic(err)
+func batchProcessor(ctx context.Context, batchChannel chan []interface{}, dbInstance *mongodb.Database, dbCollections *db.Collections) {
+	for {
+		select {
+		case batchObjects := <-batchChannel:
+			_, err := mongodb.InsertMany(ctx, batchObjects, dbCollections.Objects)
+			if err != nil {
+				fmt.Errorf("Error inserting batch: %v", err)
+			}
+		case <-ctx.Done():
+			return
+		}
 	}
-
-	//fmt.Println("saved")
-	//fmt.Printf("%+v\n", result)
-	//fmt.Println("// ---- ------ ---- //")
-
-	return nil, nil
 }
