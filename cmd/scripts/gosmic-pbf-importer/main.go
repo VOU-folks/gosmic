@@ -4,6 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"gosmic/db/models"
+	"gosmic/internal/lo"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -18,8 +20,6 @@ import (
 
 	"gosmic/db"
 	"gosmic/db/indexes"
-	"gosmic/db/models"
-
 	. "gosmic/internal/config"
 	"gosmic/internal/structs"
 
@@ -37,11 +37,11 @@ var dbInstance *mongodb.Database
 var dbCollections *db.Collections
 
 var objectsChannel chan osm.Object
-
 var batchChannel chan []interface{}
-var batchSize uint = 10000
+
 var mxBatch sync.Mutex
 var batch []interface{}
+var batchSize uint = 10000
 
 var processedObjectsCount atomic.Uint64
 
@@ -65,8 +65,9 @@ func init() {
 
 	objectsChannel = make(chan osm.Object, runtime.NumCPU()*10)
 	batchChannel = make(chan []interface{})
-	batch = make([]interface{}, batchSize)
+
 	mxBatch = sync.Mutex{}
+	batch = make([]interface{}, batchSize)
 
 	timeCheckpoint = time.Now()
 	startedAt = time.Now()
@@ -116,21 +117,32 @@ func main() {
 	// Step 3: Initiating collections
 	// --------------------------------------------
 	dbCollections = &db.Collections{
-		Objects: mongodb.GetCollection(ctx, dbInstance, "objects"),
+		Nodes: mongodb.GetCollection(ctx, dbInstance, "nodes"),
+		Ways:  mongodb.GetCollection(ctx, dbInstance, "ways"),
 	}
 	// --------------------------------------------
 
 	// --------------------------------------------
-	// Step 4: Initiating PBF file scanner
+	// Step 4: Starting object processor
 	// --------------------------------------------
-	pbfFileName := config.Osm.Sources.PBF.FileName
-	pbfStorage := config.Storage.PBFs
+	go objectProcessor(ctx, objectsChannel)
+	go batchProcessor(ctx, batchChannel, dbCollections)
 
-	pbfFilePath := filepath.Join(pbfStorage, pbfFileName)
+	// --------------------------------------------
+	// Step 5: Launching the import process
+	// --------------------------------------------
+	for _, pbfSource := range config.Osm.Sources.PBFs {
+		pbfFileName := pbfSource.FileName
+		pbfStorage := config.Storage.PBFs
+		pbfFilePath := filepath.Join(pbfStorage, pbfFileName)
 
-	fmt.Println("Importing PBF file: ", pbfFilePath)
+		fmt.Println("Importing PBF file: ", pbfFilePath)
+		scanFile(ctx, pbfFilePath)
+	}
+}
 
-	file := OpenFile(pbfFilePath)
+func scanFile(ctx context.Context, pathToPBF string) {
+	file := OpenFile(pathToPBF)
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
@@ -145,21 +157,7 @@ func main() {
 			fmt.Println("Error closing scanner: ", err)
 		}
 	}(scanner)
-	// --------------------------------------------
 
-	// --------------------------------------------
-	// Step 5: Starting object processor
-	// --------------------------------------------
-	go objectProcessor(ctx, objectsChannel, dbInstance, dbCollections)
-	go batchProcessor(ctx, batchChannel, dbInstance, dbCollections)
-
-	// --------------------------------------------
-	// Step 6: Launching the import process
-	// --------------------------------------------
-	run(ctx, scanner, dbInstance, dbCollections)
-}
-
-func run(ctx context.Context, scanner *osmpbf.Scanner, dbInstance *mongodb.Database, dbCollections *db.Collections) {
 	for scanner.Scan() {
 		objectsChannel <- scanner.Object()
 	}
@@ -177,11 +175,11 @@ func run(ctx context.Context, scanner *osmpbf.Scanner, dbInstance *mongodb.Datab
 	}
 }
 
-func objectProcessor(ctx context.Context, objectsChannel chan osm.Object, dbInstance *mongodb.Database, dbCollections *db.Collections) {
+func objectProcessor(ctx context.Context, objectsChannel chan osm.Object) {
 	for {
 		select {
 		case object := <-objectsChannel:
-			err := processObject(ctx, object, dbInstance, dbCollections)
+			err := processObject(ctx, object)
 			if err != nil {
 				fmt.Errorf("Error processing object: %v", err)
 			}
@@ -191,34 +189,42 @@ func objectProcessor(ctx context.Context, objectsChannel chan osm.Object, dbInst
 	}
 }
 
-func processObject(ctx context.Context, osmObject osm.Object, dbInstance *mongodb.Database, dbCollections *db.Collections) error {
+func processObject(ctx context.Context, osmObject osm.Object) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
 
-	var dbObject models.Object
+	var dbObject interface{}
 
-	switch osmObject := osmObject.(type) {
+	switch object := osmObject.(type) {
 	case *osm.Way:
-		dbObject = ConvertWay(osmObject)
+		dbObject = ConvertWay(object)
 	case *osm.Node:
-		dbObject = ConvertNode(osmObject)
-	case *osm.Relation:
-		dbObject = ConvertRelation(osmObject)
+		dbObject = ConvertNode(object)
 	default:
 		return fmt.Errorf("unknown object type: %T", osmObject)
 	}
 
-	mxBatch.Lock()
+	putDbObjectToBatch(dbObject)
+	processObjectCheckPoint(dbObject)
+
+	return nil
+}
+
+func putDbObjectToBatch(dbObject interface{}) {
 	counter := processedObjectsCount.Load()
 	increment := counter % uint64(batchSize)
+
+	mxBatch.Lock()
 	batch[increment] = dbObject
 	if increment == uint64(batchSize)-1 {
 		batchChannel <- batch
 		batch = make([]interface{}, batchSize)
 	}
 	mxBatch.Unlock()
+}
 
+func processObjectCheckPoint(dbObject interface{}) {
 	processedObjectsCount.Add(1)
 	if processedObjectsCount.Load()%1000000 == 0 {
 		fmt.Println("\n----\\Checkpoint\\----")
@@ -229,20 +235,48 @@ func processObject(ctx context.Context, osmObject osm.Object, dbInstance *mongod
 
 		timeCheckpoint = time.Now()
 	}
-
-	return nil
 }
 
-func batchProcessor(ctx context.Context, batchChannel chan []interface{}, dbInstance *mongodb.Database, dbCollections *db.Collections) {
+func batchProcessor(ctx context.Context, batchChannel chan []interface{}, dbCollections *db.Collections) {
+	var err error
+
 	for {
 		select {
 		case batchObjects := <-batchChannel:
-			_, err := mongodb.InsertMany(ctx, batchObjects, dbCollections.Objects)
-			if err != nil {
-				fmt.Errorf("Error inserting batch: %v", err)
+			// Saving Nodes to DB
+			nodes := lo.Filter(batchObjects, func(obj interface{}) bool {
+				return obj.(models.Node).Type == "node"
+			})
+
+			if len(nodes) > 0 {
+				_, err = saveNodesToDb(ctx, nodes, dbCollections)
+				if err != nil {
+					fmt.Println("Error saving nodes to db: ", err)
+				}
 			}
+
+			// Saving Ways to DB
+			ways := lo.Filter(batchObjects, func(obj interface{}) bool {
+				return obj.(models.Way).Type == "way"
+			})
+
+			if len(ways) > 0 {
+				_, err = saveWaysToDb(ctx, ways, dbCollections)
+				if err != nil {
+					fmt.Println("Error saving ways to db: ", err)
+				}
+			}
+
 		case <-ctx.Done():
 			return
 		}
 	}
+}
+
+func saveNodesToDb(ctx context.Context, nodes []interface{}, dbCollections *db.Collections) (*mongodb.InsertManyResult, error) {
+	return mongodb.InsertMany(ctx, nodes, dbCollections.Nodes)
+}
+
+func saveWaysToDb(ctx context.Context, ways []interface{}, dbCollections *db.Collections) (*mongodb.InsertManyResult, error) {
+	return mongodb.InsertMany(ctx, ways, dbCollections.Ways)
 }

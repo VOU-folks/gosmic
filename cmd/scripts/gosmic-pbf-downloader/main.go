@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	. "gosmic/cmd/scripts/gosmic-pbf-downloader/lib"
 
 	. "gosmic/internal/config"
@@ -33,8 +34,7 @@ func init() {
 func main() {
 	var err error
 
-	pbfSource := config.Osm.Sources.PBF.Url
-	pbfFileName := config.Osm.Sources.PBF.FileName
+	pbfSources := config.Osm.Sources.PBFs
 	pbfStorage := config.Storage.PBFs
 
 	err = EnsureFolderExists(pbfStorage)
@@ -42,8 +42,11 @@ func main() {
 		panic(err)
 	}
 
-	err = DownloadPBF(pbfSource, pbfStorage, pbfFileName)
-	if err != nil {
-		panic(err)
+	for _, pbfSource := range pbfSources {
+		fmt.Println("Downloading PBF file for region:", pbfSource.Region)
+		err = DownloadPBF(pbfSource.Url, pbfStorage, pbfSource.FileName)
+		if err != nil {
+			fmt.Printf("Error downloading PBF file for region %s: %s\n", pbfSource.Region, err.Error())
+		}
 	}
 }

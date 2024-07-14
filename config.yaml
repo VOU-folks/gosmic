@@ -26,6 +26,28 @@ storage:
 
 osm:
   sources:
-    pbf:
-      url: "https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf"
-      file: "planet-latest.osm.pbf"
+    pbfs:
+      - region: "Europe"
+        url: "https://download.geofabrik.de/europe-latest.osm.pbf"
+        file: "europe-latest.osm.pbf"
+      - region: "Africa"
+        url: "https://download.geofabrik.de/africa-latest.osm.pbf"
+        file: "africa-latest.osm.pbf"
+      - region: "Asia"
+        url: "https://download.geofabrik.de/asia-latest.osm.pbf"
+        file: "asia-latest.osm.pbf"
+      - region: "Australia and Oceania"
+        url: "https://download.geofabrik.de/australia-oceania-latest.osm.pbf"
+        file: "australia-oceania-latest.osm.pbf"
+      - region: "North America"
+        url: "https://download.geofabrik.de/north-america-latest.osm.pbf"
+        file: "north-america-latest.osm.pbf"
+      - region: "Central America"
+        url: "https://download.geofabrik.de/central-america-latest.osm.pbf"
+        file: "central-america-latest.osm.pbf"
+      - region: "South America"
+        url: "https://download.geofabrik.de/south-america-latest.osm.pbf"
+        file: "south-america-latest.osm.pbf"
+      - region: "Antarctica"
+        url: "https://download.geofabrik.de/antarctica-latest.osm.pbf"
+        file: "antarctica-latest.osm.pbf"

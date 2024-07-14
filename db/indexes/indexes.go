@@ -2,39 +2,65 @@ package indexes
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	mongoOptions "go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/x/bsonx"
 )
 
 func CreateIndexes(ctx context.Context, db *mongo.Database) error {
-	opts := mongoOptions.CreateIndexes().SetMaxTime(1000)
-	objects := db.Collection("objects")
-	_, err := objects.Indexes().CreateMany(ctx, []mongo.IndexModel{
-		{
-			Keys:    bsonx.Doc{{"tags", bsonx.Int32(-1)}},
-			Options: (mongoOptions.Index()).SetSparse(true),
-		},
-		{
-			Keys:    bsonx.Doc{{"members.ref", bsonx.Int32(-1)}},
-			Options: (mongoOptions.Index()).SetSparse(true),
-		},
-	}, opts)
+	err := CreateIndexesForNodes(ctx, db)
 	if err != nil {
 		return err
 	}
 
-	return GeoIndex(ctx, objects, "location")
+	err = CreateIndexesForWays(ctx, db)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func GeoIndex(ctx context.Context, col *mongo.Collection, key string) error {
+func CreateIndexesForNodes(ctx context.Context, db *mongo.Database) error {
+	nodes := db.Collection("nodes")
+	_, err := nodes.Indexes().CreateOne(
+		ctx,
+		mongo.IndexModel{
+			Keys:    bson.D{{"tags", -1}},
+			Options: (mongoOptions.Index()).SetSparse(true),
+		},
+		mongoOptions.CreateIndexes().SetMaxTime(1000),
+	)
+	if err != nil {
+		return err
+	}
+
+	return GeoIndex(ctx, nodes)
+}
+
+func CreateIndexesForWays(ctx context.Context, db *mongo.Database) error {
+	ways := db.Collection("ways")
+	_, err := ways.Indexes().CreateOne(
+		ctx,
+		mongo.IndexModel{
+			Keys:    bson.D{{"tags", -1}},
+			Options: (mongoOptions.Index()).SetSparse(true),
+		},
+		mongoOptions.CreateIndexes().SetMaxTime(1000),
+	)
+	if err != nil {
+		return err
+	}
+
+	return GeoIndex(ctx, ways)
+}
+
+func GeoIndex(ctx context.Context, col *mongo.Collection) error {
 	_, err := col.Indexes().CreateOne(
 		ctx,
 		mongo.IndexModel{
-			Keys: bsonx.Doc{{
-				Key: key, Value: bsonx.String("2dsphere"),
-			}},
+			Keys:    bson.D{{"location", "2dsphere"}},
 			Options: mongoOptions.Index().SetSphereVersion(2).SetSparse(true),
 		},
 	)
