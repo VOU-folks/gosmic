@@ -30,13 +30,12 @@ func DownloadPBF(url string, folderPath string, fileName string) error {
 	progress := &progressReader{reader: resp.Body, total: resp.ContentLength}
 	go progress.start()
 
-	size, err := io.Copy(outFile, progress)
+	_, err = io.Copy(outFile, progress)
 	if err != nil {
 		return err
 	}
 	progress.done()
 
-	fmt.Printf("Download completed. Total size: %d bytes\n\n", size)
 	return nil
 }
 
@@ -63,7 +62,9 @@ func (p *progressReader) start() {
 
 		select {
 		case <-time.After(100 * time.Millisecond):
-			p.report()
+			if !p.finished {
+				p.report()
+			}
 		}
 	}
 }
@@ -79,5 +80,5 @@ func (p *progressReader) report() {
 
 func (p *progressReader) done() {
 	p.finished = true
-	fmt.Printf("\rDownloading... 100.00%% complete (%v / %v) \n", p.downloaded, p.total)
+	fmt.Printf("\n\rDownloading 100%% completed. Total size: %d bytes\n\n", p.total)
 }
