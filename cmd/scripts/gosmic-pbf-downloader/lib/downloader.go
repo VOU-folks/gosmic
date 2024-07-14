@@ -36,7 +36,7 @@ func DownloadPBF(url string, folderPath string, fileName string) error {
 	}
 	progress.done()
 
-	fmt.Printf("\nDownload completed. Total size: %d bytes\n", size)
+	fmt.Printf("Download completed. Total size: %d bytes\n\n", size)
 	return nil
 }
 
@@ -45,6 +45,7 @@ type progressReader struct {
 	total        int64
 	downloaded   int64
 	lastReported int64
+	finished     bool
 }
 
 func (p *progressReader) Read(b []byte) (int, error) {
@@ -54,9 +55,14 @@ func (p *progressReader) Read(b []byte) (int, error) {
 }
 
 func (p *progressReader) start() {
+	p.finished = false
 	for {
+		if p.finished {
+			break
+		}
+
 		select {
-		case <-time.After(time.Second):
+		case <-time.After(100 * time.Millisecond):
 			p.report()
 		}
 	}
@@ -66,11 +72,12 @@ func (p *progressReader) report() {
 	percentage := float64(p.downloaded) / float64(p.total) * 100
 
 	if p.downloaded-p.lastReported > p.total/10000 || p.downloaded == p.total {
-		fmt.Printf("\rDownloading... %.2f%% complete", percentage)
+		fmt.Printf("\rDownloading... %.2f%% complete (%v / %v)", percentage, p.downloaded, p.total)
 		p.lastReported = p.downloaded
 	}
 }
 
 func (p *progressReader) done() {
-	fmt.Printf("\rDownloading... 100.00%% complete\n")
+	p.finished = true
+	fmt.Printf("\rDownloading... 100.00%% complete (%v / %v) \n", p.downloaded, p.total)
 }
