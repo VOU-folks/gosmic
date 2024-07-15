@@ -245,7 +245,8 @@ func batchProcessor(ctx context.Context, batchChannel chan []interface{}, dbColl
 		case batchObjects := <-batchChannel:
 			// Saving Nodes to DB
 			nodes := lo.Filter(batchObjects, func(obj interface{}) bool {
-				return obj.(models.Node).Type == "node"
+				_, ok := obj.(models.Node)
+				return ok
 			})
 
 			if len(nodes) > 0 {
@@ -257,7 +258,8 @@ func batchProcessor(ctx context.Context, batchChannel chan []interface{}, dbColl
 
 			// Saving Ways to DB
 			ways := lo.Filter(batchObjects, func(obj interface{}) bool {
-				return obj.(models.Way).Type == "way"
+				_, ok := obj.(models.Way)
+				return ok
 			})
 
 			if len(ways) > 0 {

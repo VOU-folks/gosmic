@@ -13,8 +13,6 @@ func ConvertWay(osmWay *osm.Way) Way {
 	}
 
 	return Way{
-		Type: "way",
-
 		ID:        uint64(osmWay.ID),
 		Version:   osmWay.Version,
 		Tags:      ConvertTags(osmWay.Tags),
@@ -25,8 +23,6 @@ func ConvertWay(osmWay *osm.Way) Way {
 
 func ConvertNode(osmNode *osm.Node) Node {
 	return Node{
-		Type: "node",
-
 		ID:        uint64(osmNode.ID),
 		Version:   osmNode.Version,
 		Tags:      ConvertTags(osmNode.Tags),

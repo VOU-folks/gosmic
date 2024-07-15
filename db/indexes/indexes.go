@@ -30,7 +30,7 @@ func CreateIndexesForNodes(ctx context.Context, db *mongo.Database) error {
 			Keys:    bson.D{{"tags", -1}},
 			Options: (mongoOptions.Index()).SetSparse(true),
 		},
-		mongoOptions.CreateIndexes().SetMaxTime(1000),
+		mongoOptions.CreateIndexes().SetMaxTime(100000),
 	)
 	if err != nil {
 		return err
@@ -47,7 +47,7 @@ func CreateIndexesForWays(ctx context.Context, db *mongo.Database) error {
 			Keys:    bson.D{{"tags", -1}},
 			Options: (mongoOptions.Index()).SetSparse(true),
 		},
-		mongoOptions.CreateIndexes().SetMaxTime(1000),
+		mongoOptions.CreateIndexes().SetMaxTime(100000),
 	)
 	if err != nil {
 		return err
